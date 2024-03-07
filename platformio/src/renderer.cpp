@@ -267,6 +267,29 @@ void powerOffDisplay()
   return;
 } // end initDisplay
 
+
+/* Column definitions
+ */
+
+#if defined(DISP_BW_420)
+  int16_t col_0 = 0, col_1 = 90, col_2 = 130, col_3 = 160, col_4 = 190, col_5 = 220, col_6 = 250, col_7 = 280;
+  int16_t icon_size = 32;
+#else
+  int16_t col_0 = 0, col_1 = 130;
+  int16_t icon_size = 64;
+#endif
+
+#if defined(DISP_BW_420)
+  #define DRAW_CONDITIONS_ICON_SIZE 32x32
+#else
+  #define DRAW_CONDITIONS_ICON_SIZE 64x64
+#endif
+
+#define CONCAT_IMPL(x, y) x##y
+#define CONCAT(x, y) CONCAT_IMPL(x, y)
+#define DRAW_CONDITIONS_ICON(name) CONCAT(name##_, DRAW_CONDITIONS_ICON_SIZE)
+
+
 /* This function is responsible for drawing the current conditions and
  * associated icons.
  */
@@ -277,9 +300,16 @@ void drawCurrentConditions(const owm_current_t &current,
 {
   String dataStr, unitStr;
   // current weather icon
-  display.drawInvertedBitmap(0, 0,
-                             getCurrentConditionsBitmap196(current, today),
+#if defined(DISP_BW_420)
+  display.drawInvertedBitmap(-8, -8,
+                             getCurrentConditionsBitmap(current, today),
+                             128, 128, GxEPD_BLACK);
+#else
+  display.drawInvertedBitmap(col_0, 0,
+                             getCurrentConditionsBitmap(current, today),
                              196, 196, GxEPD_BLACK);
+#endif
+
 
   // current temp
 #ifdef UNITS_TEMP_KELVIN
@@ -295,15 +325,23 @@ void drawCurrentConditions(const owm_current_t &current,
   unitStr = TXT_UNITS_TEMP_FAHRENHEIT;
 #endif
   // FONT_**_temperature fonts only have the character set used for displaying
-  // temperature (0123456789.-\xB0)
+  // temperature (col_0123456789.-\xB0)
   display.setFont(&FONT_48pt8b_temperature);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
     drawString(196 + 164 / 2 - 20, 196 / 2 + 69 / 2, dataStr, CENTER);
+#elif defined(DISP_BW_420)
+    display.setFont(&FONT_24pt8b);
+    drawString(108 + 82 / 2 - 10, 64 / 2 + 20 / 2, dataStr, CENTER);
 #elif defined(DISP_BW_V1)
     drawString(156 + 164 / 2 - 20, 196 / 2 + 69 / 2, dataStr, CENTER);
 #endif
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_12pt8b);
+  drawString(display.getCursorX(), 64 / 2 + 20 / 2 + 10, unitStr, LEFT);
+#else
   display.setFont(&FONT_14pt8b);
   drawString(display.getCursorX(), 196 / 2 - 69 / 2 + 20, unitStr, LEFT);
+#endif
 
   // current feels like
 #ifdef UNITS_TEMP_KELVIN
@@ -323,68 +361,84 @@ void drawCurrentConditions(const owm_current_t &current,
             + '\xB0';
 #endif
   display.setFont(&FONT_12pt8b);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
   drawString(196 + 164 / 2, 98 + 69 / 2 + 12 + 17, dataStr, CENTER);
+#elif defined(DISP_BW_420)
+  display.setFont(&FONT_9pt8b);
+  drawString(98 + 82 / 2, 49 + 34 / 2 + 6 + 8, dataStr, CENTER);
 #elif defined(DISP_BW_V1)
   drawString(156 + 164 / 2, 98 + 69 / 2 + 12 + 17, dataStr, CENTER);
 #endif
   // line dividing top and bottom display areas
-  // display.drawLine(0, 196, DISP_WIDTH - 1, 196, GxEPD_BLACK);
+  // display.drawLine(col_0, 196, DISP_WIDTH - 1, 196, GxEPD_BLACK);
 
   // current weather data icons
-  display.drawInvertedBitmap(0, 204 + (48 + 8) * 0,
-                             wi_sunrise_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(0, 204 + (48 + 8) * 1,
-                             wi_strong_wind_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(0, 204 + (48 + 8) * 2,
-                             wi_day_sunny_48x48, 48, 48, GxEPD_BLACK);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
-  display.drawInvertedBitmap(0, 204 + (48 + 8) * 3,
-                             air_filter_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(0, 204 + (48 + 8) * 4,
-                             house_thermometer_48x48, 48, 48, GxEPD_BLACK);
+#if defined(DISP_BW_420)
+  int16_t offset_y = 165, pad = 4;
+#else
+  int16_t offset_y = 204, pad = 8;
 #endif
-  display.drawInvertedBitmap(170, 204 + (48 + 8) * 0,
-                             wi_sunset_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(170, 204 + (48 + 8) * 1,
-                             wi_humidity_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(170, 204 + (48 + 8) * 2,
-                             wi_barometer_48x48, 48, 48, GxEPD_BLACK);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
-  display.drawInvertedBitmap(170, 204 + (48 + 8) * 3,
-                             visibility_icon_48x48, 48, 48, GxEPD_BLACK);
-  display.drawInvertedBitmap(170, 204 + (48 + 8) * 4,
-                             house_humidity_48x48, 48, 48, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_0, offset_y + (icon_size + pad) * 0,
+                             DRAW_CONDITIONS_ICON(wi_sunrise), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_0, offset_y + (icon_size + pad) * 1,
+                             DRAW_CONDITIONS_ICON(wi_strong_wind), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_0, offset_y + (icon_size + pad) * 2,
+                             DRAW_CONDITIONS_ICON(wi_day_sunny), icon_size, icon_size, GxEPD_BLACK);
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
+  display.drawInvertedBitmap(col_0, offset_y + (icon_size + pad) * 3,
+                             DRAW_CONDITIONS_ICON(air_filter), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_0, offset_y + (icon_size + pad) * 4,
+                             DRAW_CONDITIONS_ICON(house_thermometer), icon_size, icon_size, GxEPD_BLACK);
+#endif
+  display.drawInvertedBitmap(col_1, offset_y + (icon_size + pad) * 0,
+                             DRAW_CONDITIONS_ICON(wi_sunset), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_1, offset_y + (icon_size + pad) * 1,
+                             DRAW_CONDITIONS_ICON(wi_humidity), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_1, offset_y + (icon_size + pad) * 2,
+                             DRAW_CONDITIONS_ICON(wi_barometer), icon_size, icon_size, GxEPD_BLACK);
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
+  display.drawInvertedBitmap(col_1, offset_y + (icon_size + pad) * 3,
+                             DRAW_CONDITIONS_ICON(visibility_icon), icon_size, icon_size, GxEPD_BLACK);
+  display.drawInvertedBitmap(col_1, offset_y + (icon_size + pad) * 4,
+                             DRAW_CONDITIONS_ICON(house_humidity), icon_size, icon_size, GxEPD_BLACK);
 #endif
 
   // current weather data labels
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_6pt8b);
+#else
   display.setFont(&FONT_7pt8b);
-  drawString(48, 204 + 10 + (48 + 8) * 0, TXT_SUNRISE, LEFT);
-  drawString(48, 204 + 10 + (48 + 8) * 1, TXT_WIND, LEFT);
-  drawString(48, 204 + 10 + (48 + 8) * 2, TXT_UV_INDEX, LEFT);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
-  drawString(48, 204 + 10 + (48 + 8) * 3, TXT_AIR_QUALITY_INDEX, LEFT);
-  drawString(48, 204 + 10 + (48 + 8) * 4, TXT_INDOOR_TEMPERATURE, LEFT);
 #endif
-  drawString(170 + 48, 204 + 10 + (48 + 8) * 0, TXT_SUNSET, LEFT);
-  drawString(170 + 48, 204 + 10 + (48 + 8) * 1, TXT_HUMIDITY, LEFT);
-  drawString(170 + 48, 204 + 10 + (48 + 8) * 2, TXT_PRESSURE, LEFT);
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
-  drawString(170 + 48, 204 + 10 + (48 + 8) * 3, TXT_VISIBILITY, LEFT);
-  drawString(170 + 48, 204 + 10 + (48 + 8) * 4, TXT_INDOOR_HUMIDITY, LEFT);
+  drawString(icon_size, offset_y + 10 + (icon_size + 8) * 0, TXT_SUNRISE, LEFT);
+  drawString(icon_size, offset_y + 10 + (icon_size + 8) * 1, TXT_WIND, LEFT);
+  drawString(icon_size, offset_y + 10 + (icon_size + 8) * 2, TXT_UV_INDEX, LEFT);
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
+  drawString(icon_size, offset_y + 10 + (icon_size + 8) * 3, TXT_AIR_QUALITY_INDEX, LEFT);
+  drawString(icon_size, offset_y + 10 + (icon_size + 8) * 4, TXT_INDOOR_TEMPERATURE, LEFT);
+#endif
+  drawString(col_1 + icon_size, offset_y + 10 + (icon_size + 8) * 0, TXT_SUNSET, LEFT);
+  drawString(col_1 + icon_size, offset_y + 10 + (icon_size + 8) * 1, TXT_HUMIDITY, LEFT);
+  drawString(col_1 + icon_size, offset_y + 10 + (icon_size + 8) * 2, TXT_PRESSURE, LEFT);
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
+  drawString(col_1 + icon_size, offset_y + 10 + (icon_size + 8) * 3, TXT_VISIBILITY, LEFT);
+  drawString(col_1 + icon_size, offset_y + 10 + (icon_size + 8) * 4, TXT_INDOOR_HUMIDITY, LEFT);
 #endif
 
   // sunrise
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_12pt8b);
+#endif
   char timeBuffer[12] = {}; // big enough to accommodate "hh:mm:ss am"
   time_t ts = current.sunrise;
   tm *timeInfo = localtime(&ts);
   _strftime(timeBuffer, sizeof(timeBuffer), TIME_FORMAT, timeInfo);
-  drawString(48, 204 + 17 / 2 + (48 + 8) * 0 + 48 / 2, timeBuffer, LEFT);
+  drawString(icon_size, offset_y + 17 / 2 + (icon_size + 8) * 0 + icon_size / 2, timeBuffer, LEFT);
 
   // wind
 #ifdef WIND_INDICATOR_ARROW
-  display.drawInvertedBitmap(48, 204 + 24 / 2 + (48 + 8) * 1,
+  display.drawInvertedBitmap(icon_size, offset_y + 24 / 2 + (icon_size + 8) * 1,
                              getWindBitmap24(current.wind_deg),
                              24, 24, GxEPD_BLACK);
 #endif
@@ -418,18 +472,26 @@ void drawCurrentConditions(const owm_current_t &current,
 #endif
 
 #ifdef WIND_INDICATOR_ARROW
-  drawString(48 + 24, 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2, dataStr, LEFT);
+  drawString(icon_size + 24, offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2, dataStr, LEFT);
 #else
-  drawString(48     , 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2, dataStr, LEFT);
+  drawString(icon_size     , offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2, dataStr, LEFT);
 #endif
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_8pt8b);
-  drawString(display.getCursorX(), 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2,
+#endif
+  drawString(display.getCursorX(), offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2,
              unitStr, LEFT);
 
 #if defined(WIND_INDICATOR_NUMBER)
   dataStr = String(current.wind_deg) + "\xB0";
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_12pt8b);
-  drawString(display.getCursorX() + 6, 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2,
+#endif
+  drawString(display.getCursorX() + 6, offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2,
              dataStr, LEFT);
 #endif
 #if defined(WIND_INDICATOR_CPN_CARDINAL)                \
@@ -437,26 +499,38 @@ void drawCurrentConditions(const owm_current_t &current,
  || defined(WIND_INDICATOR_CPN_SECONDARY_INTERCARDINAL) \
  || defined(WIND_INDICATOR_CPN_TERTIARY_INTERCARDINAL)
   dataStr = getCompassPointNotation(current.wind_deg);
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_12pt8b);
-  drawString(display.getCursorX() + 6, 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2,
+#endif
+  drawString(display.getCursorX() + 6, offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2,
              dataStr, LEFT);
 #endif
 
   // uv and air quality indices
   // spacing between end of index value and start of descriptor text
+#if defined(DISP_BW_420)
+  const int sp = 4;
+#else
   const int sp = 8;
+#endif
 
   // uv index
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_12pt8b);
+#endif
   uint uvi = static_cast<uint>(std::max(round(current.uvi), 0.0f));
   dataStr = String(uvi);
-  drawString(48, 204 + 17 / 2 + (48 + 8) * 2 + 48 / 2, dataStr, LEFT);
+  drawString(icon_size, offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2, dataStr, LEFT);
   display.setFont(&FONT_7pt8b);
   dataStr = String(getUVIdesc(uvi));
-  int max_w = 170 - (display.getCursorX() + sp);
+  int max_w = col_1 - (display.getCursorX() + sp);
   if (getStringWidth(dataStr) <= max_w)
   { // Fits on a single line, draw along bottom
-    drawString(display.getCursorX() + sp, 204 + 17 / 2 + (48 + 8) * 2 + 48 / 2,
+    drawString(display.getCursorX() + sp, offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2,
                dataStr, LEFT);
   }
   else
@@ -465,29 +539,29 @@ void drawCurrentConditions(const owm_current_t &current,
     if (getStringWidth(dataStr) <= max_w)
     { // Fits on a single line with smaller font, draw along bottom
       drawString(display.getCursorX() + sp,
-                 204 + 17 / 2 + (48 + 8) * 2 + 48 / 2,
+                 offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2,
                  dataStr, LEFT);
     }
     else
     { // Does not fit on a single line, draw higher to allow room for 2nd line
       drawMultiLnString(display.getCursorX() + sp,
-                        204 + 17 / 2 + (48 + 8) * 2 + 48 / 2 - 10,
+                        offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2 - 10,
                         dataStr, LEFT, max_w, 2, 10);
     }
   }
 
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
   // air quality index
   display.setFont(&FONT_12pt8b);
   int aqi = getAQI(owm_air_pollution);
   dataStr = String(aqi);
-  drawString(48, 204 + 17 / 2 + (48 + 8) * 3 + 48 / 2, dataStr, LEFT);
+  drawString(icon_size, offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2, dataStr, LEFT);
   display.setFont(&FONT_7pt8b);
   dataStr = String(getAQIdesc(aqi));
-  max_w = 170 - (display.getCursorX() + sp);
+  max_w = col_1 - (display.getCursorX() + sp);
   if (getStringWidth(dataStr) <= max_w)
   { // Fits on a single line, draw along bottom
-    drawString(display.getCursorX() + sp, 204 + 17 / 2 + (48 + 8) * 3 + 48 / 2,
+    drawString(display.getCursorX() + sp, offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2,
                dataStr, LEFT);
   }
   else
@@ -496,13 +570,13 @@ void drawCurrentConditions(const owm_current_t &current,
     if (getStringWidth(dataStr) <= max_w)
     { // Fits on a single line with smaller font, draw along bottom
       drawString(display.getCursorX() + sp,
-                 204 + 17 / 2 + (48 + 8) * 3 + 48 / 2,
+                 offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2,
                  dataStr, LEFT);
     }
     else
     { // Does not fit on a single line, draw higher to allow room for 2nd line
       drawMultiLnString(display.getCursorX() + sp,
-                        204 + 17 / 2 + (48 + 8) * 3 + 48 / 2 - 10,
+                        offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2 - 10,
                         dataStr, LEFT, max_w, 2, 10);
     }
   }
@@ -528,21 +602,30 @@ void drawCurrentConditions(const owm_current_t &current,
 #if defined(UNITS_TEMP_CELSIUS) || defined(UNITS_TEMP_FAHRENHEIT)
   dataStr += "\xB0";
 #endif
-  drawString(48, 204 + 17 / 2 + (48 + 8) * 4 + 48 / 2, dataStr, LEFT);
-#endif // defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+  drawString(icon_size, offset_y + 17 / 2 + (icon_size + 8) * 4 + icon_size / 2, dataStr, LEFT);
+#endif // defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
 
   // sunset
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
+  display.setFont(&FONT_12pt8b);
+#endif
   memset(timeBuffer, '\0', sizeof(timeBuffer));
   ts = current.sunset;
   timeInfo = localtime(&ts);
   _strftime(timeBuffer, sizeof(timeBuffer), TIME_FORMAT, timeInfo);
-  drawString(170 + 48, 204 + 17 / 2 + (48 + 8) * 0 + 48 / 2, timeBuffer, LEFT);
+  drawString(col_1 + icon_size, offset_y + 17 / 2 + (icon_size + 8) * 0 + icon_size / 2, timeBuffer, LEFT);
 
   // humidity
   dataStr = String(current.humidity);
-  drawString(170 + 48, 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2, dataStr, LEFT);
+  drawString(col_1 + icon_size, offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2, dataStr, LEFT);
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_8pt8b);
-  drawString(display.getCursorX(), 204 + 17 / 2 + (48 + 8) * 1 + 48 / 2,
+#endif
+  drawString(display.getCursorX(), offset_y + 17 / 2 + (icon_size + 8) * 1 + icon_size / 2,
              "%", LEFT);
 
   // pressure
@@ -589,13 +672,22 @@ void drawCurrentConditions(const owm_current_t &current,
                    ) / 1e2f, 2);
   unitStr = TXT_UNITS_PRES_POUNDSPERSQUAREINCH;
 #endif
+
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_12pt8b);
-  drawString(170 + 48, 204 + 17 / 2 + (48 + 8) * 2 + 48 / 2, dataStr, LEFT);
+#endif
+  drawString(col_1 + icon_size, offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2, dataStr, LEFT);
+#if defined(DISP_BW_420)
+  display.setFont(&FONT_7pt8b);
+#else
   display.setFont(&FONT_8pt8b);
-  drawString(display.getCursorX(), 204 + 17 / 2 + (48 + 8) * 2 + 48 / 2,
+#endif
+  drawString(display.getCursorX(), offset_y + 17 / 2 + (icon_size + 8) * 2 + icon_size / 2,
              unitStr, LEFT);
 
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
   // visibility
   display.setFont(&FONT_12pt8b);
 #ifdef UNITS_DIST_KILOMETERS
@@ -624,9 +716,9 @@ void drawCurrentConditions(const owm_current_t &current,
 #endif
     dataStr = "> " + dataStr;
   }
-  drawString(170 + 48, 204 + 17 / 2 + (48 + 8) * 3 + 48 / 2, dataStr, LEFT);
+  drawString(col_1 + icon_size, offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2, dataStr, LEFT);
   display.setFont(&FONT_8pt8b);
-  drawString(display.getCursorX(), 204 + 17 / 2 + (48 + 8) * 3 + 48 / 2,
+  drawString(display.getCursorX(), offset_y + 17 / 2 + (icon_size + 8) * 3 + icon_size / 2,
              unitStr, LEFT);
 
   // indoor humidity
@@ -639,11 +731,11 @@ void drawCurrentConditions(const owm_current_t &current,
   {
     dataStr = "--";
   }
-  drawString(170 + 48, 204 + 17 / 2 + (48 + 8) * 4 + 48 / 2, dataStr, LEFT);
+  drawString(col_1 + icon_size, offset_y + 17 / 2 + (icon_size + 8) * 4 + icon_size / 2, dataStr, LEFT);
   display.setFont(&FONT_8pt8b);
-  drawString(display.getCursorX(), 204 + 17 / 2 + (48 + 8) * 4 + 48 / 2,
+  drawString(display.getCursorX(), offset_y + 17 / 2 + (icon_size + 8) * 4 + icon_size / 2,
              "%", LEFT);
-#endif // defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#endif // defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
   return;
 } // end drawCurrentConditions
 
@@ -655,8 +747,10 @@ void drawForecast(owm_daily_t *const daily, tm timeInfo)
   String hiStr, loStr;
   for (int i = 0; i < 5; ++i)
   {
-#if defined(DISP_BW_V2) || defined(DISP_BW_420) || defined(DISP_3C_B) || defined(DISP_7C_F)
+#if defined(DISP_BW_V2) || defined(DISP_3C_B) || defined(DISP_7C_F)
     int x = 398 + (i * 82);
+#elif defined(DISP_BW_420)
+    int x = 199 + (i * 41);
 #elif defined(DISP_BW_V1)
     int x = 318 + (i * 64);
 #endif
@@ -756,10 +850,10 @@ void drawAlerts(std::vector<owm_alerts_t> &alerts,
   if (num_valid_alerts == 1)
   { // 1 alert
     // adjust max width to for 48x48 icons
-    max_w -= 48;
+    max_w -= icon_size;
 
     owm_alerts_t &cur_alert = alerts[alert_indices[0]];
-    display.drawInvertedBitmap(196, 8, getAlertBitmap48(cur_alert), 48, 48,
+    display.drawInvertedBitmap(196, 8, getAlertBitmap48(cur_alert), icon_size, icon_size,
                                ACCENT_COLOR);
     // must be called after getAlertBitmap
     toTitleCase(cur_alert.event);
@@ -767,18 +861,18 @@ void drawAlerts(std::vector<owm_alerts_t> &alerts,
     display.setFont(&FONT_14pt8b);
     if (getStringWidth(cur_alert.event) <= max_w)
     { // Fits on a single line, draw along bottom
-      drawString(196 + 48 + 4, 24 + 8 - 12 + 20 + 1, cur_alert.event, LEFT);
+      drawString(196 + icon_size + 4, 24 + 8 - 12 + 20 + 1, cur_alert.event, LEFT);
     }
     else
     { // use smaller font
       display.setFont(&FONT_12pt8b);
       if (getStringWidth(cur_alert.event) <= max_w)
       { // Fits on a single line with smaller font, draw along bottom
-        drawString(196 + 48 + 4, 24 + 8 - 12 + 17 + 1, cur_alert.event, LEFT);
+        drawString(196 + icon_size + 4, 24 + 8 - 12 + 17 + 1, cur_alert.event, LEFT);
       }
       else
       { // Does not fit on a single line, draw higher to allow room for 2nd line
-        drawMultiLnString(196 + 48 + 4, 24 + 8 - 12 + 17 - 11,
+        drawMultiLnString(196 + icon_size + 4, 24 + 8 - 12 + 17 - 11,
                           cur_alert.event, LEFT, max_w, 2, 23);
       }
     }
