@@ -23,11 +23,14 @@
 
 // E-PAPER PANEL
 // This project supports the following E-Paper panels:
-//   DISP_BW_V2 - 7.5in e-paper (v2)      800x480px  Black/White
-//   DISP_3C_B  - 7.5in e-Paper (B)       800x480px  Red/Black/White
-//   DISP_7C_F  - 7.3in ACeP e-Paper (F)  800x480px  7-Color
-//   DISP_BW_V1 - 7.5in e-paper (v1)      640x384px  Black/White
+//   DISP_BW_400x300 - 4.2in e-paper           400x300px  Black/White
+//   DISP_BW_V2      - 7.5in e-paper (v2)      800x480px  Black/White
+//   DISP_3C_B       - 7.5in e-Paper (B)       800x480px  Red/Black/White
+//   DISP_7C_F       - 7.3in ACeP e-Paper (F)  800x480px  7-Color
+//   DISP_BW_V1      - 7.5in e-paper (v1)      640x384px  Black/White
 // Uncomment the macro that identifies your physical panel.
+
+// #define DISP_BW_400x300
 #define DISP_BW_V2
 // #define DISP_3C_B
 // #define DISP_7C_F
@@ -288,9 +291,10 @@ extern const unsigned long LOW_BATTERY_SLEEP_INTERVAL;
 extern const unsigned long VERY_LOW_BATTERY_SLEEP_INTERVAL;
 
 // CONFIG VALIDATION - DO NOT MODIFY
-#if !(  defined(DISP_BW_V2)  \
-      ^ defined(DISP_3C_B)   \
-      ^ defined(DISP_7C_F)   \
+#if !(  defined(DISP_BW_400x300) \
+      ^ defined(DISP_BW_V2)       \
+      ^ defined(DISP_3C_B)       \
+      ^ defined(DISP_7C_F)       \
       ^ defined(DISP_BW_V1))
   #error Invalid configuration. Exactly one display panel must be selected.
 #endif

@@ -24,6 +24,13 @@
 #include "api_response.h"
 #include "config.h"
 
+#ifdef DISP_BW_400x300
+  #define DISP_WIDTH  400
+  #define DISP_HEIGHT 300
+  #include <GxEPD2_BW.h>
+  extern GxEPD2_BW<GxEPD2_420_M01,
+                   GxEPD2_420_M01::HEIGHT> display;
+#endif
 #ifdef DISP_BW_V2
   #define DISP_WIDTH  800
   #define DISP_HEIGHT 480
